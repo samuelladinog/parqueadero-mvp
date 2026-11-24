@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: parqueadero
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/parqueadero}
+    username: ${DB_USER:parqueadero}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # el esquema lo maneja Flyway, no Hibernate
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
