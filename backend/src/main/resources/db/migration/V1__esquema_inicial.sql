@@ -58,7 +58,7 @@ CREATE TABLE evento_acceso (
     tipo_vehiculo VARCHAR(10)
         CHECK (tipo_vehiculo IN ('CARRO', 'MOTO')),
     tipo VARCHAR(10) NOT NULL
-        CHECK (tipo IN ('ENTRADA', 'SALIDA')),
+        CHECK (tipo IN ('INGRESO', 'SALIDA')),
     confianza NUMERIC(5,2)
         CHECK (confianza BETWEEN 0 AND 100),
     lectura_manual BOOLEAN NOT NULL DEFAULT FALSE,
@@ -76,7 +76,12 @@ CREATE TABLE cobro (
     dia_operativo DATE NOT NULL,
     valor NUMERIC(12,2) NOT NULL CHECK (valor >= 0),
     estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE'
-        CHECK (estado IN ('PENDIENTE', 'PAGADO')),
+        CHECK (estado IN (
+            'PENDIENTE',
+            'PAGADO',
+            'VENCIDO',
+            'ANULADO'
+        )),
     fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT uq_cobro_placa_sede_dia
