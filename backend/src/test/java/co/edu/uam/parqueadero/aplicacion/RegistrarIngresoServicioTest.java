@@ -14,6 +14,7 @@ import co.edu.uam.parqueadero.dominio.puertos.RepositorioEventos;
 import co.edu.uam.parqueadero.dominio.puertos.RepositorioSedes;
 import co.edu.uam.parqueadero.infraestructura.lector.AdaptadorCamaraLpr;
 import co.edu.uam.parqueadero.infraestructura.lector.LectorManual;
+import co.edu.uam.parqueadero.infraestructura.lector.LectorValidadoPorOperador;
 import co.edu.uam.parqueadero.infraestructura.lector.ResultadoCamaraLpr;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -105,6 +106,52 @@ class RegistrarIngresoServicioTest {
     void rechazaSedeInexistente() {
         assertThatThrownBy(() -> servicio.registrar(99L, camara("ABC123", 0.95)))
                 .isInstanceOf(SedeNoEncontradaException.class);
+    }
+
+    @Test
+    @DisplayName("HU-03 éxito: confianza 40 con umbral 85, el operador corrige la placa y queda como lectura manual")
+    void registraLecturaDudosaCorregidaPorElOperador() {
+        assertThatThrownBy(() -> servicio.registrar(1L, camara("ABC128", 0.40)))
+                .isInstanceOf(LecturaDudosaException.class);
+
+        EventoAcceso evento = servicio.registrar(1L, new LectorValidadoPorOperador("ABC128", "abc 123", 40.0));
+
+        assertThat(evento.placa()).isEqualTo(Placa.de("ABC123"));
+        assertThat(evento.lecturaManual()).isTrue();
+        assertThat(evento.confianza()).isEqualTo(40.0);
+        assertThat(evento.observacion()).isEqualTo("Lectura corregida por el operador: la cámara leyó ABC128");
+        assertThat(eventos.guardados).containsExactly(evento);
+    }
+
+    @Test
+    @DisplayName("HU-03: el operador confirma la placa leída sin cambiarla")
+    void registraLecturaDudosaConfirmadaPorElOperador() {
+        EventoAcceso evento = servicio.registrar(1L, new LectorValidadoPorOperador("ABC-123", "ABC123", 40.0));
+
+        assertThat(evento.lecturaManual()).isTrue();
+        assertThat(evento.observacion()).isEqualTo("Lectura confirmada por el operador");
+    }
+
+    @Test
+    @DisplayName("HU-03 error: el operador envía una placa vacía y se rechaza sin registrar")
+    void rechazaValidacionConPlacaVacia() {
+        assertThatThrownBy(() -> servicio.registrar(1L, new LectorValidadoPorOperador("ABC128", "  ", 40.0)))
+                .isInstanceOf(PlacaInvalidaException.class)
+                .hasMessage("La placa no puede estar vacía");
+        assertThat(eventos.guardados).isEmpty();
+    }
+
+    @Test
+    @DisplayName("HU-03: el umbral depende de la sede, no del código")
+    void elUmbralSeConfiguraPorSede() {
+        Sede sedeExigente = new Sede(2L, "Sede norte", 99.0);
+        RepositorioSedes dosSedes = id -> id.equals(2L) ? Optional.of(sedeExigente) : sedes.buscarPorId(id);
+        RegistrarIngresoServicio conDosSedes =
+                new RegistrarIngresoServicio(ClasificadorVehiculo.conReglasColombianas(), dosSedes, eventos, RELOJ);
+
+        assertThat(conDosSedes.registrar(1L, camara("ABC123", 0.95)).lecturaManual()).isFalse();
+        assertThatThrownBy(() -> conDosSedes.registrar(2L, camara("ABC123", 0.95)))
+                .isInstanceOf(LecturaDudosaException.class);
     }
 
     private static AdaptadorCamaraLpr camara(String placa, double score) {
