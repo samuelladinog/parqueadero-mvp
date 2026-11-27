@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,10 +21,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Prueba de punta a punta contra PostgreSQL real: arranca Spring, aplica las migraciones de Flyway,
  * valida que las entidades JPA coincidan con el esquema y guarda un ingreso.
+ * Cada prueba corre en una transacción que se revierte al final, así no deja datos en la base.
  * Solo corre cuando existe la variable DB_URL (el CI la define con su servicio de PostgreSQL;
  * en local se activa levantando docker compose y exportando las variables del .env).
  */
 @SpringBootTest
+@Transactional
 @EnabledIfEnvironmentVariable(named = "DB_URL", matches = ".+")
 class RegistrarIngresoIntegracionTest {
 
@@ -46,5 +51,7 @@ class RegistrarIngresoIntegracionTest {
         assertThat(fila.get("tipo_vehiculo")).isEqualTo(TipoVehiculo.CARRO.name());
         assertThat(fila.get("lectura_manual")).isEqualTo(false);
         assertThat(fila.get("sede_id")).isEqualTo(sedeId);
+        // La cámara entrega score 0.95 (escala 0 a 1); el adaptador lo guarda en la escala 0 a 100 del esquema.
+        assertThat((BigDecimal) fila.get("confianza")).isEqualByComparingTo(new BigDecimal("95.00"));
     }
 }
