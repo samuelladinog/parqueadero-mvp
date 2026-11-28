@@ -1,9 +1,9 @@
 # Sprint 1 – Un vehículo entra
 
-**Periodo de referencia:** 26 y 27 de noviembre de 2026.  
-**Scrum Master:** Juan Gómez · **Product Owner:** Samuel Ladino · **Desarrollo:** Miguel Castrillón. Los tres participan en el desarrollo.  
-**Backlog comprometido:** HU-01 a HU-06, 27 puntos.  
-**Corte del informe:** noche del 27 de noviembre, según el estado verificable de GitHub.  
+**Periodo de referencia:** 26 y 27 de noviembre de 2026.
+**Scrum Master:** Juan Gómez · **Product Owner:** Samuel Ladino · **Desarrollo:** Miguel Castrillón. Los tres participan en el desarrollo.
+**Backlog comprometido:** HU-01 a HU-06, 27 puntos.
+**Corte del informe:** noche del 27 de noviembre, según el estado verificable de GitHub.
 **Nota:** Samuel indicó que el Sprint 1 está cerrado. Los acuerdos de la reunión de review y retrospectiva aún deben ser confirmados por el equipo; no se presentan como reuniones realizadas.
 
 ## Objetivo del sprint
@@ -46,7 +46,13 @@ El criterio para contar puntos terminados en este informe es **historia integrad
 
 **Método:** se restan del total comprometido los puntos de historias integradas al final de cada fecha. La línea ideal es una referencia visual; la línea real se obtuvo de los PR y su estado de merge. El gráfico no demuestra que se hayan realizado las ceremonias Scrum.
 
-**Evidencia adicional pendiente:** captura del tablero en GitHub Projects → Insights, filtrado por las historias del Sprint 1. GitHub dispone de un gráfico histórico *Burn up*; la imagen anterior representa el *Burndown* calculado con puntos pendientes y no se debe confundir con el gráfico nativo.
+
+**Evidencia de GitHub Projects Insights:** se configuró una gráfica personalizada llamada "Sprint 1 - Seguimiento de puntos", filtrada por las seis historias del Sprint 1 y utilizando la suma del campo `Estimacion (pts)`. Para el periodo del 26 al 27 de noviembre, la gráfica muestra 8 puntos completados y 19 pendientes.
+
+![Seguimiento del Sprint 1 en GitHub Projects Insights](../evidencias/insights-sprint-1.png)
+
+Esta gráfica corresponde al seguimiento histórico del tablero. El burndown de puntos pendientes se presenta por separado en la sección anterior.
+
 
 ## Sprint review – balance del cierre
 
@@ -84,4 +90,4 @@ El criterio para contar puntos terminados en este informe es **historia integrad
 
 El backlog inicial del Sprint 2 reúne HU-07 (5 puntos), HU-08 (3), HU-09 (3) y HU-10 (3): **14 puntos**. Hay además **19 puntos del Sprint 1 todavía no integrados** a este corte. Samuel, como Product Owner, debe decidir qué trabajo pendiente se arrastra y con qué prioridad, sin marcarlo retrospectivamente como terminado.
 
-**Pendientes de documentación Scrum:** registrar asistentes y acuerdos reales de la review/retro; anexar captura de Insights de GitHub Projects; actualizar la tabla de iteraciones una vez se acuerde el alcance del Sprint 2.
+**Pendientes de documentación Scrum:** registrar asistentes y acuerdos reales de la review/retro; actualizar la tabla de iteraciones una vez se acuerde el alcance del Sprint 2.
