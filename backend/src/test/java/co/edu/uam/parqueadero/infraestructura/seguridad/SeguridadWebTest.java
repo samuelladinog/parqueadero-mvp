@@ -1,7 +1,7 @@
 package co.edu.uam.parqueadero.infraestructura.seguridad;
 
 import co.edu.uam.parqueadero.infraestructura.persistencia.UsuarioEntidad;
-import co.edu.uam.parqueadero.web.AutenticacionController;
+import co.edu.uam.parqueadero.web.AutenticacionControlador;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = AutenticacionController.class)
+@WebMvcTest(controllers = AutenticacionControlador.class)
 @Import({ConfiguracionSeguridad.class, SeguridadWebTest.RutasPrueba.class})
 class SeguridadWebTest {
 
@@ -74,7 +74,10 @@ class SeguridadWebTest {
     void operadorNoPuedeEntrarAAdministracion() throws Exception {
         mvc.perform(get("/api/admin/prueba")
                         .with(httpBasic("operador@ejemplo.test", "clave-operador")))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.title").value("Acceso denegado"))
+                .andExpect(jsonPath("$.detail").isNotEmpty());
     }
 
     @Test
@@ -87,19 +90,25 @@ class SeguridadWebTest {
     @Test
     void accesoSinCredencialesDevuelve401() throws Exception {
         mvc.perform(get("/api/auth/yo"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.title").value("No autenticado"))
+                .andExpect(jsonPath("$.detail").isNotEmpty());
     }
 
     @Test
     void claveIncorrectaDevuelve401() throws Exception {
         mvc.perform(get("/api/auth/yo").with(httpBasic("operador@ejemplo.test", "otra-clave")))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.title").value("No autenticado"));
     }
 
     @Test
     void usuarioInactivoDevuelve401() throws Exception {
         mvc.perform(get("/api/auth/yo").with(httpBasic("inactivo@ejemplo.test", "clave-inactivo")))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
     }
 
     @RestController

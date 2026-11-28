@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 /** Devuelve los datos publicos del usuario autenticado, nunca su password. */
 @RestController
 @RequestMapping("/api/auth")
-public class AutenticacionController {
+public class AutenticacionControlador {
 
     @GetMapping("/yo")
     public PerfilRespuesta yo(@AuthenticationPrincipal UsuarioPrincipal usuario) {

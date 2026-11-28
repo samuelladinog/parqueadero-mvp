@@ -1,6 +1,10 @@
 package co.edu.uam.parqueadero.infraestructura.seguridad;
 
 import jakarta.servlet.http.HttpServletResponse;
+import tools.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +42,7 @@ public class ConfiguracionSeguridad {
 
     @Bean
     public SecurityFilterChain filtroSeguridad(
-            HttpSecurity http, AuthenticationProvider proveedorAutenticacion) throws Exception {
+            HttpSecurity http, AuthenticationProvider proveedorAutenticacion, ObjectMapper json) throws Exception {
         return http
                 .authenticationProvider(proveedorAutenticacion)
                 .csrf(AbstractHttpConfigurer::disable)
@@ -57,12 +61,12 @@ public class ConfiguracionSeguridad {
                 )
                 .exceptionHandling(errores -> errores
                         .authenticationEntryPoint((peticion, respuesta, excepcion) ->
-                                respuestaJson(respuesta, 401, "Credenciales invalidas o ausentes"))
+                                respuestaProblema(respuesta, HttpStatus.UNAUTHORIZED, "No autenticado", "Credenciales invalidas o ausentes", json))
                         .accessDeniedHandler((peticion, respuesta, excepcion) ->
-                                respuestaJson(respuesta, 403, "Acceso denegado"))
+                                respuestaProblema(respuesta, HttpStatus.FORBIDDEN, "Acceso denegado", "No tiene permisos para acceder a este recurso", json))
                 )
                 .httpBasic(basic -> basic.authenticationEntryPoint((peticion, respuesta, excepcion) ->
-                        respuestaJson(respuesta, 401, "Credenciales invalidas o ausentes")))
+                        respuestaProblema(respuesta, HttpStatus.UNAUTHORIZED, "No autenticado", "Credenciales invalidas o ausentes", json)))
                 .build();
     }
 
@@ -79,14 +83,17 @@ public class ConfiguracionSeguridad {
         return origenes;
     }
 
-    private static void respuestaJson(HttpServletResponse respuesta, int estado, String mensaje)
+    private static void respuestaProblema(HttpServletResponse respuesta, HttpStatus estado,
+                                        String titulo, String detalle, ObjectMapper json)
             throws IOException {
-        respuesta.setStatus(estado);
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(estado, detalle);
+        problema.setTitle(titulo);
+        respuesta.setStatus(estado.value());
         respuesta.setCharacterEncoding("UTF-8");
-        respuesta.setContentType("application/json");
-        if (estado == 401) {
+        respuesta.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        if (estado == HttpStatus.UNAUTHORIZED) {
             respuesta.setHeader("WWW-Authenticate", "Basic realm=\"Parqueadero\"");
         }
-        respuesta.getWriter().write("{\"error\":\"" + mensaje + "\"}");
+        json.writeValue(respuesta.getOutputStream(), problema);
     }
 }
