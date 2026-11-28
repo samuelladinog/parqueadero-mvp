@@ -11,6 +11,7 @@ import co.edu.uam.parqueadero.dominio.modelo.TipoVehiculo;
 import co.edu.uam.parqueadero.dominio.puertos.LectorPlacas;
 import co.edu.uam.parqueadero.infraestructura.lector.AdaptadorCamaraLpr;
 import co.edu.uam.parqueadero.infraestructura.lector.LectorManual;
+import co.edu.uam.parqueadero.infraestructura.lector.LectorValidadoPorOperador;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,7 @@ class IngresoControladorTest {
     private RegistrarIngresoServicio registrarIngreso;
 
     private static final EventoAcceso EVENTO = new EventoAcceso(7L, 1L, Placa.de("ABC123"), TipoVehiculo.CARRO,
-            TipoEvento.INGRESO, 95.0, false, LocalDateTime.of(2026, 11, 26, 10, 0));
+            TipoEvento.INGRESO, 95.0, false, null, LocalDateTime.of(2026, 11, 26, 10, 0));
 
     @Test
     void registraDesdeLaCamaraUsandoElAdaptador() throws Exception {
@@ -120,6 +121,32 @@ class IngresoControladorTest {
         mvc.perform(post("/api/sedes/1/ingresos/manual").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"placa\": \"\"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(registrarIngreso);
+    }
+
+    @Test
+    void validacionDelOperadorUsaElLectorValidadoYConservaLaConfianza() throws Exception {
+        when(registrarIngreso.registrar(eq(1L), any())).thenReturn(EVENTO);
+
+        mvc.perform(post("/api/sedes/1/ingresos/validacion").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"placaLeida\": \"ABC128\", \"placaConfirmada\": \"ABC123\", \"confianza\": 40.0}"))
+                .andExpect(status().isCreated());
+
+        ArgumentCaptor<LectorPlacas> lector = ArgumentCaptor.forClass(LectorPlacas.class);
+        verify(registrarIngreso).registrar(eq(1L), lector.capture());
+        assertThat(lector.getValue()).isInstanceOf(LectorValidadoPorOperador.class);
+        assertThat(lector.getValue().leer().manual()).isTrue();
+        assertThat(lector.getValue().leer().confianza()).isEqualTo(40.0);
+    }
+
+    @Test
+    void validacionConPlacaVaciaResponde400() throws Exception {
+        mvc.perform(post("/api/sedes/1/ingresos/validacion").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"placaLeida\": \"ABC128\", \"placaConfirmada\": \" \", \"confianza\": 40.0}"))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(registrarIngreso);

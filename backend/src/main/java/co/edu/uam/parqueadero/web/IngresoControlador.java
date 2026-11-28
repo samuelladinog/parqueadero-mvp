@@ -4,6 +4,7 @@ import co.edu.uam.parqueadero.aplicacion.RegistrarIngresoServicio;
 import co.edu.uam.parqueadero.dominio.modelo.EventoAcceso;
 import co.edu.uam.parqueadero.infraestructura.lector.AdaptadorCamaraLpr;
 import co.edu.uam.parqueadero.infraestructura.lector.LectorManual;
+import co.edu.uam.parqueadero.infraestructura.lector.LectorValidadoPorOperador;
 import co.edu.uam.parqueadero.infraestructura.lector.ResultadoCamaraLpr;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -19,8 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 
 /**
- * Ingreso de vehículos (F-01). Dos entradas que usan el mismo caso de uso con lectores distintos:
- * la cámara (o su simulador) y la digitación del operador.
+ * Ingreso de vehículos (F-01, F-06). Tres entradas que usan el mismo caso de uso con lectores distintos:
+ * la cámara (o su simulador), la digitación del operador y la validación de una lectura dudosa.
  */
 @RestController
 @RequestMapping("/api/sedes/{sedeId}/ingresos")
@@ -49,19 +50,37 @@ public class IngresoControlador {
         return EventoRespuesta.desde(registrarIngreso.registrar(sedeId, new LectorManual(solicitud.placa())));
     }
 
+    /**
+     * El operador resuelve una lectura dudosa (respuesta 409 de /camara): confirma la placa leída
+     * o la corrige. {"placaLeida": "ABC128", "placaConfirmada": "ABC123", "confianza": 40.0}
+     */
+    @PostMapping("/validacion")
+    @ResponseStatus(HttpStatus.CREATED)
+    public EventoRespuesta registrarValidada(@PathVariable Long sedeId,
+                                             @Valid @RequestBody ValidacionOperadorSolicitud solicitud) {
+        var lector = new LectorValidadoPorOperador(
+                solicitud.placaLeida(), solicitud.placaConfirmada(), solicitud.confianza());
+        return EventoRespuesta.desde(registrarIngreso.registrar(sedeId, lector));
+    }
+
     public record LecturaCamaraSolicitud(@NotBlank String plate, @NotNull Double score) {
     }
 
     public record LecturaManualSolicitud(@NotBlank String placa) {
     }
 
+    public record ValidacionOperadorSolicitud(String placaLeida, @NotBlank String placaConfirmada,
+                                              @NotNull Double confianza) {
+    }
+
     public record EventoRespuesta(Long id, Long sedeId, String placa, String tipoVehiculo, String tipo,
-                                  double confianza, boolean lecturaManual, LocalDateTime fechaHora) {
+                                  double confianza, boolean lecturaManual, String observacion,
+                                  LocalDateTime fechaHora) {
 
         static EventoRespuesta desde(EventoAcceso evento) {
             return new EventoRespuesta(evento.id(), evento.sedeId(), evento.placa().valor(),
                     evento.tipoVehiculo().name(), evento.tipo().name(), evento.confianza(),
-                    evento.lecturaManual(), evento.fechaHora());
+                    evento.lecturaManual(), evento.observacion(), evento.fechaHora());
         }
     }
 }

@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 /**
  * Registro de un ingreso o una salida de un vehículo en una sede.
- * El id es nulo hasta que el evento se guarda.
+ * El id es nulo hasta que el evento se guarda. La observación deja rastro de las acciones manuales.
  */
 public record EventoAcceso(
         Long id,
@@ -14,15 +14,17 @@ public record EventoAcceso(
         TipoEvento tipo,
         double confianza,
         boolean lecturaManual,
+        String observacion,
         LocalDateTime fechaHora) {
 
     public static EventoAcceso ingreso(Sede sede, Placa placa, TipoVehiculo tipoVehiculo,
                                        LecturaPlaca lectura, LocalDateTime fechaHora) {
         return new EventoAcceso(null, sede.id(), placa, tipoVehiculo, TipoEvento.INGRESO,
-                lectura.confianza(), lectura.manual(), fechaHora);
+                lectura.confianza(), lectura.manual(), lectura.observacion(), fechaHora);
     }
 
     public EventoAcceso conId(Long nuevoId) {
-        return new EventoAcceso(nuevoId, sedeId, placa, tipoVehiculo, tipo, confianza, lecturaManual, fechaHora);
+        return new EventoAcceso(nuevoId, sedeId, placa, tipoVehiculo, tipo, confianza, lecturaManual,
+                observacion, fechaHora);
     }
 }

@@ -4,6 +4,7 @@ import co.edu.uam.parqueadero.aplicacion.RegistrarIngresoServicio;
 import co.edu.uam.parqueadero.dominio.modelo.EventoAcceso;
 import co.edu.uam.parqueadero.dominio.modelo.TipoVehiculo;
 import co.edu.uam.parqueadero.infraestructura.lector.AdaptadorCamaraLpr;
+import co.edu.uam.parqueadero.infraestructura.lector.LectorValidadoPorOperador;
 import co.edu.uam.parqueadero.infraestructura.lector.ResultadoCamaraLpr;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -53,5 +54,20 @@ class RegistrarIngresoIntegracionTest {
         assertThat(fila.get("sede_id")).isEqualTo(sedeId);
         // La cámara entrega score 0.95 (escala 0 a 1); el adaptador lo guarda en la escala 0 a 100 del esquema.
         assertThat((BigDecimal) fila.get("confianza")).isEqualByComparingTo(new BigDecimal("95.00"));
+    }
+
+    @Test
+    void guardaLaLecturaValidadaPorElOperadorConSuObservacion() {
+        Long sedeId = jdbc.queryForObject(
+                "INSERT INTO sede (nombre, direccion, umbral_confianza) VALUES ('Sede prueba', 'Calle 1', 85.00) RETURNING id",
+                Long.class);
+
+        EventoAcceso evento = registrarIngreso.registrar(sedeId,
+                new LectorValidadoPorOperador("ABC128", "ABC123", 40.0));
+
+        Map<String, Object> fila = jdbc.queryForMap("SELECT * FROM evento_acceso WHERE id = ?", evento.id());
+        assertThat(fila.get("placa")).isEqualTo("ABC123");
+        assertThat(fila.get("lectura_manual")).isEqualTo(true);
+        assertThat(fila.get("motivo")).isEqualTo("Lectura corregida por el operador: la cámara leyó ABC128");
     }
 }

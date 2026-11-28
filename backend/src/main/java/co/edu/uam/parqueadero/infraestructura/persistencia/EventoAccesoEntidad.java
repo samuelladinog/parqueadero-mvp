@@ -18,7 +18,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 /**
- * Fila de la tabla {@code evento_acceso} (migración V1). Las columnas de cupo, usuario y motivo
+ * Fila de la tabla {@code evento_acceso} (migración V1). Las columnas de cupo y usuario
  * se mapearán cuando las historias que las usan (HU-04, HU-06) lo necesiten.
  */
 @Entity
@@ -52,6 +52,10 @@ public class EventoAccesoEntidad {
     @Column(name = "acceso_autorizado", nullable = false)
     private boolean accesoAutorizado;
 
+    /** Columna {@code motivo} de la V1: guarda la observación de las acciones manuales para auditoría. */
+    @Column(name = "motivo", length = 255)
+    private String observacion;
+
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 
@@ -69,12 +73,13 @@ public class EventoAccesoEntidad {
         entidad.confianza = BigDecimal.valueOf(evento.confianza()).setScale(2, RoundingMode.HALF_UP);
         entidad.lecturaManual = evento.lecturaManual();
         entidad.accesoAutorizado = true;
+        entidad.observacion = evento.observacion();
         entidad.fechaHora = evento.fechaHora();
         return entidad;
     }
 
     EventoAcceso aDominio() {
         return new EventoAcceso(id, sedeId, Placa.de(placa), tipoVehiculo, tipo,
-                confianza.doubleValue(), lecturaManual, fechaHora);
+                confianza.doubleValue(), lecturaManual, observacion, fechaHora);
     }
 }

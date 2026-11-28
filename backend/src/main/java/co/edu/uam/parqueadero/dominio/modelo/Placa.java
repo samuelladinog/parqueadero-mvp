@@ -15,7 +15,7 @@ public record Placa(String valor) {
     private static final Pattern ALFANUMERICO = Pattern.compile("[A-Z0-9]+");
 
     public Placa {
-        valor = valor == null ? "" : SEPARADORES.matcher(valor).replaceAll("").toUpperCase(Locale.ROOT);
+        valor = normalizar(valor);
         if (valor.isEmpty()) {
             throw new PlacaInvalidaException("La placa no puede estar vacía");
         }
@@ -26,6 +26,11 @@ public record Placa(String valor) {
 
     public static Placa de(String texto) {
         return new Placa(texto);
+    }
+
+    /** Aplica la misma normalización sin validar; sirve para comparar textos leídos que aún no son placas. */
+    public static String normalizar(String texto) {
+        return texto == null ? "" : SEPARADORES.matcher(texto).replaceAll("").toUpperCase(Locale.ROOT);
     }
 
     @Override
